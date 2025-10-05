@@ -1,0 +1,28 @@
+/**
+ * @theme custom
+ * @auto-scaling true
+ * @transition default
+ * @size 4K 3840px 2160px
+ */
+
+@import 'default';
+
+
+/* shade text to show on bright backgrounds */
+section {
+
+    h1,
+    h2,
+    ul {
+        text-shadow: 0 0 0.125em black;
+    }
+
+    .invert {
+
+        h1,
+        h2,
+        ul {
+            text-shadow: 0 0 0.125em white;
+        }
+    }
+}

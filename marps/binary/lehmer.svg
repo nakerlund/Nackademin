@@ -1,0 +1,301 @@
+<svg id="ui" viewBox="0 0 1200 750" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Pattern must live in <defs> for broad browser support -->
+    <pattern id="dotPattern" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="2" fill="#a5d8ff" />
+    </pattern>
+
+    <!-- Card frame and back -->
+    <symbol id="card-frame" viewBox="0 0 90 130" preserveAspectRatio="xMidYMid meet">
+      <rect x="1" y="1" width="88" height="128" rx="10" ry="10" fill="#fff" stroke="#d1d1d1" stroke-width="2" />
+    </symbol>
+    <symbol id="card-back" viewBox="0 0 90 130" preserveAspectRatio="xMidYMid meet">
+      <rect x="1" y="1" width="88" height="128" rx="10" ry="10" fill="#1f487e" stroke="#e0e0e0" stroke-width="2" />
+      <rect x="10" y="10" width="70" height="110" fill="url(#dotPattern)" rx="6" />
+    </symbol>
+  </defs>
+
+  <style>
+    #table {
+      fill: #155a31;
+      stroke: #143826;
+      stroke-width: 6;
+    }
+
+    text {
+      fill: #e6e6e6;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+    }
+
+    #title {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    #bytes {
+      font-size: 12px;
+      fill: #a8b2c1;
+    }
+
+    #status {
+      font-size: 18px;
+      fill: #ffd166;
+      font-weight: 700;
+    }
+
+    .button rect {
+      fill: #23395b;
+      stroke: #3a5c8a;
+      stroke-width: 2;
+      rx: 12;
+      ry: 12;
+    }
+
+    .button:hover rect {
+      filter: brightness(1.15);
+    }
+
+    .button text {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .score {
+      font-size: 20px;
+      font-weight: 700;
+      fill: #e3f2e9;
+    }
+
+    /* Suit coloring via attribute selector */
+    [data-suit="1"] text,
+    [data-suit="2"] text {
+      fill: #d12f2f;
+    }
+
+    /* ♦ ♥ */
+    [data-suit="0"] text,
+    [data-suit="3"] text {
+      fill: #1a1a1a;
+    }
+
+    /* ♣ ♠ */
+  </style>
+
+  <!-- Table background -->
+  <rect id="table" x="40" y="80" width="1120" height="620" rx="28" />
+
+  <!-- Header -->
+  <text id="title" x="60" y="50">SVG Blackjack — Deck in 29 bytes (Lehmer)</text>
+  <text id="bytes" x="60" y="75"></text>
+
+  <!-- Dealer row -->
+  <text x="80" y="140" font-size="20" font-weight="700" fill="#e3f2e9">Dealer</text>
+  <text id="dealerScore" class="score" x="160" y="140">–</text>
+  <g id="dealerHand" transform="translate(80,160)"></g>
+
+  <!-- Player row -->
+  <text x="80" y="380" font-size="20" font-weight="700" fill="#e3f2e9">You</text>
+  <text id="playerScore" class="score" x="130" y="380">–</text>
+  <g id="playerHand" transform="translate(80,400)"></g>
+
+  <!-- Buttons -->
+  <g id="btnNew" class="button" transform="translate(860,120)" cursor="pointer">
+    <rect x="0" y="0" width="260" height="44" />
+    <text x="130" y="28" text-anchor="middle">New Deck &amp; Deal</text>
+  </g>
+  <g id="btnHit" class="button" transform="translate(860,180)" cursor="pointer">
+    <rect x="0" y="0" width="120" height="44" />
+    <text x="60" y="28" text-anchor="middle">Hit</text>
+  </g>
+  <g id="btnStand" class="button" transform="translate(1000,180)" cursor="pointer">
+    <rect x="0" y="0" width="120" height="44" />
+    <text x="60" y="28" text-anchor="middle">Stand</text>
+  </g>
+  <g id="btnPeek" class="button" transform="translate(860,240)" cursor="pointer">
+    <rect x="0" y="0" width="260" height="44" />
+    <text x="130" y="28" text-anchor="middle">Peek Dealer (debug)</text>
+  </g>
+
+  <text id="status" x="860" y="320"></text>
+
+  <script>
+    <![CDATA[
+    // ===== Helpers =====
+      function $(id){ if (id && id[0]==='#') id=id.slice(1); return document.getElementById(id); }
+      const NS = 'http://www.w3.org/2000/svg';
+      const svgEl = (name, attrs={}, children=[]) => {
+        const el = document.createElementNS(NS, name);
+        for (const k in attrs) {
+          // Write both href and xlink:href for wide SVG compatibility
+          if (k === 'href') {
+            el.setAttribute('href', attrs[k]);
+            el.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', attrs[k]);
+          } else {
+            el.setAttribute(k, attrs[k]);
+          }
+        }
+        for (const c of children) el.appendChild(c);
+        return el;
+      };
+      const setText = (id, s='') => { const n = $(id); if (n) n.textContent = s; };
+      function onReady(fn){
+        if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(fn,0);
+        else document.addEventListener('DOMContentLoaded', fn, { once:true });
+      }
+
+      // ===== Lehmer encoding (52-card permutation - 29 bytes) =====
+      const N = 52;
+      const FACT_N = (() => { let f = 1n; for (let i = 2n; i <= 52n; i++) f *= i; return f; })();
+      const SUITS = ['\u2663','\u2666','\u2665','\u2660']; // ♣ ♦ ♥ ♠
+      const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+      const bytesToBigInt = bytes => bytes.reduce((v,b)=>(v<<8n)|BigInt(b), 0n);
+      function bigIntToBytes(v, len){ const out=new Uint8Array(len); for(let i=len-1;i>=0;i--){ out[i]=Number(v&0xffn); v>>=8n; } return out; }
+
+      function valueToPermutation(value){
+        if (value<0n || value>=FACT_N) throw new Error('value out of range');
+        const digits = new Array(N);
+        for (let i=0;i<N;i++){
+          const base = BigInt(N-i);
+          const d = value % base; value = (value - d) / base; digits[i] = Number(d);
+        }
+        const remaining = Array.from({length:N}, (_,i)=>i);
+        const perm = new Array(N);
+        for (let i=0;i<N;i++) perm[i] = remaining.splice(digits[i],1)[0];
+        return perm;
+      }
+
+      function randomDeckBytes(){
+        const len = 29; let bytes = new Uint8Array(len);
+        while (true){
+          crypto.getRandomValues(bytes);
+          if (bytesToBigInt(bytes) < FACT_N) return bytes; // unbiased
+        }
+      }
+
+      function decodeDeck(bytes29){
+        if (!(bytes29 instanceof Uint8Array) || bytes29.length!==29) throw new Error('Need 29 bytes');
+        const v = bytesToBigInt(bytes29);
+        if (v >= FACT_N) throw new Error('Encoded value >= 52!');
+        return valueToPermutation(v);
+      }
+
+      // ===== Blackjack utils =====
+      const rankOf = c => c % 13;
+      const suitOf = c => Math.floor(c / 13);
+      const cardValue = r => r===0 ? 11 : (r>=10 ? 10 : r+1);
+      function handValue(cards){
+        let total=0, aces=0;
+        for(const c of cards){ const r=rankOf(c); total+=cardValue(r); if(r===0) aces++; }
+        while(total>21 && aces>0){ total-=10; aces--; }
+        return total;
+      }
+
+      // ===== Rendering =====
+      function clearNode(node){ while(node && node.firstChild) node.removeChild(node.firstChild); }
+      function renderCard(card, hidden=false){
+        if (hidden) return svgEl('use', {href:'#card-back', x:0, y:0, width:90, height:130});
+        const g = svgEl('g', { 'data-suit': String(suitOf(card)) });
+        g.appendChild(svgEl('use', {href:'#card-frame', x:0, y:0, width:90, height:130}));
+        const r = rankOf(card), s = suitOf(card), rank = RANKS[r], suit = SUITS[s];
+        g.appendChild(svgEl('text', {x:10,y:20,'font-size':16,'font-weight':700}, [document.createTextNode(rank)]));
+        g.appendChild(svgEl('text', {x:10,y:38,'font-size':16}, [document.createTextNode(suit)]));
+        g.appendChild(svgEl('text', {x:45,y:72,'text-anchor':'middle','font-size':38}, [document.createTextNode(suit)]));
+        g.appendChild(svgEl('text', {x:80,y:120,'text-anchor':'end','font-size':14}, [document.createTextNode(rank)]));
+        return g;
+      }
+      function drawHand(groupId, cards, hideSecond=false){
+        const g = $(groupId); clearNode(g);
+        let x=0; const dx=96; // spacing
+        for (let i=0;i<cards.length;i++){
+          const c = cards[i];
+          const cardG = renderCard(c, hideSecond && i===1);
+          cardG.setAttribute('transform', `translate(${x},0)`);
+          g.appendChild(cardG);
+          x += dx;
+        }
+      }
+      function bytesToHex(bytes){ return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join(' '); }
+
+      // ===== Game state =====
+      let deckBytes=null, deckPerm=[], nextIdx=0;
+      let player=[], dealer=[], dealerHidden=true, gameOver=false;
+
+      function deal(to){ if (nextIdx>=deckPerm.length) throw new Error('Deck exhausted'); const c=deckPerm[nextIdx++]; to.push(c); return c; }
+
+      function updateScores(){
+        const p = handValue(player);
+        const d = dealerHidden ? handValue([dealer[0]]) : handValue(dealer);
+        setText('playerScore', String(p));
+        setText('dealerScore', dealerHidden ? `${d}+?` : String(d));
+      }
+
+      function refreshBytes(){ if(!deckBytes){ setText('bytes',''); return; } setText('bytes', 'Deck bytes (big-endian): '+bytesToHex(deckBytes)); }
+
+      function render(){ drawHand('playerHand', player, false); drawHand('dealerHand', dealer, dealerHidden); updateScores(); }
+      function revealDealer(){ dealerHidden=false; render(); }
+      function dealerPlay(){ while(handValue(dealer) < 17) deal(dealer); }
+      function finishRound(){
+        revealDealer(); dealerPlay(); render();
+        const p=handValue(player), d=handValue(dealer);
+        let msg='';
+        if (p>21) msg='You bust. Dealer wins.';
+        else if (d>21) msg='Dealer busts. You win!';
+        else if (p>d) msg='You win!';
+        else if (p<d) msg='Dealer wins.'; else msg='Push.';
+        setText('status', msg); gameOver=true;
+      }
+      function startNew(){
+        deckBytes = randomDeckBytes();
+        deckPerm = decodeDeck(deckBytes);
+        nextIdx=0; player=[]; dealer=[]; dealerHidden=true; gameOver=false; setText('status','');
+        refreshBytes();
+        deal(player); deal(dealer); deal(player); deal(dealer);
+        render();
+        const p=handValue(player), d=handValue([dealer[0], dealer[1]]);
+        if (p===21 || d===21){ revealDealer(); finishRound(); }
+      }
+      function onHit(){ if(gameOver) return; deal(player); render(); if (handValue(player)>21) { finishRound(); } }
+      function onStand(){ if(gameOver) return; finishRound(); }
+
+      // ===== Wire up safely =====
+      function wireUI(){
+        const newBtn = $('btnNew');
+        const hitBtn = $('btnHit');
+        const standBtn = $('btnStand');
+        const peekBtn = $('btnPeek');
+        if (!newBtn || !hitBtn || !standBtn || !peekBtn) return void requestAnimationFrame(wireUI);
+        newBtn.addEventListener('click', startNew);
+        hitBtn.addEventListener('click', onHit);
+        standBtn.addEventListener('click', onStand);
+        peekBtn.addEventListener('click', () => { dealerHidden=!dealerHidden; render(); });
+        startNew();
+      }
+      onReady(wireUI);
+
+      // ===== Self-tests (extended) =====
+      (function selfTests(){
+        // Permutation structure
+        const b = randomDeckBytes();
+        const perm = decodeDeck(b);
+        console.assert(perm.length===52, 'perm length');
+        console.assert(new Set(perm).size===52, 'perm uniqueness');
+        // Edge values
+        const z = bigIntToBytes(0n,29);
+        const p0 = decodeDeck(z);
+        console.assert(p0[0]===0 && p0[51]===51, 'zero maps to identity');
+        const max = bigIntToBytes(FACT_N-1n,29);
+        const pmax = decodeDeck(max);
+        console.assert(pmax[0]===51 && pmax[51]===0, 'max maps to reverse (expected for this lehmer mapping)');
+        // Hand values
+        const A_spades = 39; const K_spades = 51; const nine_hearts = 2*13 + 8;
+        console.assert(handValue([A_spades, K_spades])===21, 'blackjack 21');
+        console.assert(handValue([A_spades, nine_hearts, A_spades])===21, 'soft aces adjust');
+        // Render sanity: ensure a card <use> gets width/height so it paints
+        const testCard = renderCard(0,false);
+        const useNode = testCard.querySelector('use');
+        console.assert(useNode && useNode.getAttribute('width')==='90', 'use width set');
+      })();
+    ]]>
+  </script>
+</svg>
