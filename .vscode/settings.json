@@ -1,0 +1,28 @@
+{
+	"editor.codeActionsOnSave": {
+		"source.fixAll.markdownlint": "explicit"
+	},
+	// Auto-format on save (all languages)
+	"editor.formatOnSave": true,
+	"files.trimTrailingWhitespace": true,
+	"files.trimFinalNewlines": true,
+	"files.autoSave": "onFocusChange",
+	"files.eol": "\n",
+	// JSON-specific overrides
+	"[json]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"markdown.preview.typographer": true,
+	"markdown.marp.themes": [
+		"./themes/custom.css"
+	],
+	"markdownlint.config": {
+		"MD007": {
+			"indent": 4
+		},
+		"MD026": false,
+		"MD025": false,
+		"MD033": false,
+		"no-hard-tabs": false
+	}
+}

@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "marp-team.marp-vscode",
+    "christian-kohler.path-intellisense",
+    "davidanson.vscode-markdownlint"
+  ]
+}
