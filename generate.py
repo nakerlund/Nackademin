@@ -50,6 +50,7 @@ def marp_to_html(md_file_list):
 
     arguments = [
         'docker', 'run', '--rm',
+        '--user', f'{os.getuid()}:{os.getgid()}',
         '-v', f'{CURRENT_DIR}:/home/marp/app',
         '-e', f'LANG={os.environ.get("LANG", "C.UTF-8")}',
         'marpteam/marp-cli',
