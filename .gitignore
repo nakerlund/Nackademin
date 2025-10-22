@@ -1,4 +1,3 @@
-*.htm
-*.html
-*.pptx
-*.pdf
+marps/*/*.htm*
+marps/*/*.pptx
+marps/*/*.pdf

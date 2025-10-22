@@ -1,0 +1,47 @@
+name: Build and Publish Marp Presentations
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-marp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies (if needed)
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install --upgrade pip
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt found, skipping pip install"
+          fi
+
+      - name: Generate presentations and index
+        run: |
+          python generate.py "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}"
+
+      - name: Commit and push generated docs
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update generated presentations and index"
+            git push
+          fi

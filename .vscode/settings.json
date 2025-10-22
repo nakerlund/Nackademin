@@ -1,6 +1,6 @@
 {
 	"editor.codeActionsOnSave": {
-		"source.fixAll.markdownlint": "explicit"
+		"source.fixAll.markdownlint": "always"
 	},
 	// Auto-format on save (all languages)
 	"editor.formatOnSave": true,
@@ -15,14 +15,5 @@
 	"markdown.preview.typographer": true,
 	"markdown.marp.themes": [
 		"./themes/custom.css"
-	],
-	"markdownlint.config": {
-		"MD007": {
-			"indent": 4
-		},
-		"MD026": false,
-		"MD025": false,
-		"MD033": false,
-		"no-hard-tabs": false
-	}
+	]
 }

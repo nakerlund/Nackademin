@@ -2,13 +2,13 @@
 marp: true
 theme: custom
 paginate: true
-header: 'Nätverk och adresser'
+header: 'Nätverk och Adresser'
 footer: 'Niklas Åkerlund &lt;<a href="mailto:niklas.akerlund@nackademin.se">niklas.akerlund@nackademin.se</a>&gt;'
 class: invert
 math: mathjax
 ---
 
-# Nätverk och adresser
+# Nätverk och Adresser
 
 ![bg](mailboxes-1838667.jpg)
 
