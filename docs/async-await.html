@@ -75,7 +75,7 @@ t.ContinueWith(done =&gt;
 </foreignObject></svg><svg data-marpit-svg="" viewBox="0 0 1280 720"><foreignObject width="1280" height="720"><section id="5" data-marpit-fragments="2" data-paginate="true" data-header="Async/Await" data-footer="Niklas Åkerlund &amp;lt;&lt;a href=&quot;mailto:niklas.akerlund@nackademin.se&quot;&gt;niklas.akerlund@nackademin.se&lt;/a&gt;&amp;gt;" data-class="invert" lang="en-US" class="invert" data-marpit-pagination="5" style="--paginate:true;--header:Async/Await;--class:invert;" data-marpit-pagination-total="8">
 <header>Async/Await</header>
 <h1 id="varf%C3%B6r-syntaktiskt-socker">Varför syntaktiskt socker?</h1>
-<p><strong>C# 4</strong></p>
+<h2 id="c-4">C# 4</h2>
 <pre is="marp-pre" data-auto-scaling="downscale-only"><code class="language-csharp">DownloadAsync()
   .ContinueWith(done =&gt;
   {
@@ -83,7 +83,7 @@ t.ContinueWith(done =&gt;
       <span class="hljs-keyword">else</span> Process(done.Result);
   });
 </code></pre>
-<p><strong>C# 5</strong></p>
+<h2 id="c-5">C# 5</h2>
 <pre is="marp-pre" data-auto-scaling="downscale-only"><code class="language-csharp"><span class="hljs-keyword">try</span> { Process(<span class="hljs-keyword">await</span> DownloadAsync()); }
 <span class="hljs-keyword">catch</span> (Exception ex) { Handle(ex); }
 </code></pre>

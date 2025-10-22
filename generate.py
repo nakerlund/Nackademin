@@ -4,6 +4,7 @@ import subprocess
 import sys
 import shutil
 import logging
+import platform
 
 MARPS_PATH = 'marps'
 DOCS_PATH = 'docs'
@@ -50,12 +51,18 @@ def marp_to_html(md_file_list):
 
     arguments = [
         'docker', 'run', '--rm',
-        '--user', f'{os.getuid()}:{os.getgid()}',
         '-v', f'{CURRENT_DIR}:/home/marp/app',
         '-e', f'LANG={os.environ.get("LANG", "C.UTF-8")}',
+    ]
+
+    # Only set MARP_USER on Linux/Mac (GitHub Actions, etc.)
+    if platform.system() != 'Windows':
+        arguments.extend(['-e', f'MARP_USER={os.getuid()}:{os.getgid()}'])
+
+    arguments.extend([
         'marpteam/marp-cli',
         *arg_file_list
-    ]
+    ])
 
     line = ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in arguments)
     logging.info(f"Running command: {line}")
