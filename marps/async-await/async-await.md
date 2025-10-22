@@ -80,7 +80,7 @@ public async Task RunAsync(string url)
 
 # Varför syntaktiskt socker?
 
-**C# 4**
+## C# 4
 
 ```csharp
 DownloadAsync()
@@ -91,7 +91,7 @@ DownloadAsync()
   });
 ```
 
-**C# 5**
+## C# 5
 
 ```csharp
 try { Process(await DownloadAsync()); }
